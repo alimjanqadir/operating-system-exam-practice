@@ -18,8 +18,6 @@
 
   欢迎大家测试 请问题请Email:sony006@163.com
   */
-#include <stdio.h>
-#include <string.h>
 #include <iostream>
 using namespace std;
 
@@ -245,29 +243,10 @@ void timer()
   }
 }
 
-//显示版权信息函数
-void version()
-{
-  cout << endl
-       << endl;
-
-  cout << " ┏━━━━━━━━━━━━━━━━━━━━━━━┓" << endl;
-  cout << " ┃　　　　　　 进程调度模拟系统　 　　　　　　　┃" << endl;
-  cout << " ┠───────────────────────┨" << endl;
-  cout << " ┃　   　(c)All Right Reserved  Neo　　　 　　　┃" << endl;
-  cout << " ┃　　　　　　sony006@163.com　　 　　　　　　　┃" << endl;
-  cout << " ┃　　　　　version 2004  build 1122　　　　　　┃" << endl;
-  cout << " ┗━━━━━━━━━━━━━━━━━━━━━━━┛" << endl;
-  cout << endl
-       << endl;
-}
-
 //主函数
 int main()
 {
   int flag;
-
-  version();
 
   initial();
 
