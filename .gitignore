@@ -1,1 +1,7 @@
 *.out
+test.cpp
+
+.idea
+.vscode
+
+*.dSYM
