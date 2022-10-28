@@ -1,166 +1,135 @@
-
-
-//�����ҽ������ģ���Ϊ����ʱ����һ���lru�㷨Ҳ����
-
+// Page replacement algorithms which includes OPT and LRU.
 #include <iostream>
 
 using namespace std;
 
-const int maxpage = 100;
-const int maxmem = 3;
+const int MAX_PAGE_SIZE = 100;
+const int ALLOCATED_PAGE_SIZE = 3;
 
-typedef struct node
-{
-  int pageno;
+typedef struct node {
+  int page_number;
   int pageflag;
-} PAGE;
-PAGE page[maxmem];
-int pagenum[maxpage];
-int m;
-///////////////////////////////////
-void init()
-{
-  int i;
-  for (i = 0; i < maxmem; i++)
-  {
-    page[i].pageno = 0;
-    page[i].pageflag = 0;
-  }
+} page;
+page pages[ALLOCATED_PAGE_SIZE];
+int page_numbers[MAX_PAGE_SIZE];
+int page_size;
 
-  return;
+void init() {
+  int i;
+  for (i = 0; i < ALLOCATED_PAGE_SIZE; i++) {
+    pages[i].page_number = 0;
+    pages[i].pageflag = 0;
+  }
 }
-//////////////////////////////////
-int readata()
-{
-  char filename[20];
+
+int readInput() {
+  char fname[20] = "page_requests.txt";
   FILE *fp;
   int i = 0;
 
-  strcpy(filename, "page_requests.txt");
-
-  if ((fp = fopen(filename, "r")) == NULL)
-  {
+  if ((fp = fopen(fname, "r")) == NULL) {
     cout << "出现错误，不能访问文件。";
     return 0;
   }
-  while (!feof(fp))
-  {
-    fscanf(fp, "%d,", &pagenum[i]);
+
+  while (!feof(fp)) {
+    fscanf(fp, "%d,", &page_numbers[i]);
     i++;
   }
-  m = i;
+  page_size = i;
   cout << endl;
   cout << "请求的页面序列:" << endl;
-  for (i = 0; i < m; i++)
-  {
-    cout << pagenum[i] << "  ";
+  for (i = 0; i < page_size; i++) {
+    cout << page_numbers[i] << "  ";
   }
   cout << endl;
   fclose(fp);
   return 1;
 }
 
-
-void pageopt()
-{
-  int i, k, kk, aa = 100, bb = 100, cc = 100;
-  cout << "OPT算法：" << endl;
-  for (i = 0; i < 3; i++)
-  {
-    page[i].pageno = pagenum[i];
+void opt() {
+  int i, k, fault_position, first_page_next_index = 100, second_page_next_index = 100, third_page_next = 100;
+  cout << "OPT算法:" << endl;
+  // First a few pages
+  for (i = 0; i < ALLOCATED_PAGE_SIZE; i++) {
+    pages[i].page_number = page_numbers[i];
     cout << "x  ";
   }
-  //-------------
-  for (i = 3; i < m; i++)
-  {
-    aa = 100;
-    bb = 100;
-    cc = 100;
-    if (page[0].pageno != pagenum[i] && page[1].pageno != pagenum[i] && page[2].pageno != pagenum[i])
-    {
-      for (k = i; k < m; k++)
-      {
-        if (page[0].pageno == pagenum[k])
-          aa = k;
+  for (i = ALLOCATED_PAGE_SIZE; i < page_size; i++) {
+    first_page_next_index = 100;
+    second_page_next_index = 100;
+    third_page_next = 100;
+    if (pages[0].page_number != page_numbers[i] &&
+        pages[1].page_number != page_numbers[i] &&
+        pages[2].page_number != page_numbers[i]) {
+      for (k = i; k < page_size; k++) {
+        if (pages[0].page_number == page_numbers[k])
+          first_page_next_index = k;
       }
-      for (k = i; k < m; k++)
-      {
-        if (page[1].pageno == pagenum[k])
-          bb = k;
+      for (k = i; k < page_size; k++) {
+        if (pages[1].page_number == page_numbers[k])
+          second_page_next_index = k;
       }
-      for (k = i; k < m; k++)
-      {
-        if (page[2].pageno == pagenum[k])
-          cc = k;
+      for (k = i; k < page_size; k++) {
+        if (pages[2].page_number == page_numbers[k])
+          third_page_next = k;
       }
 
-      if (aa > bb)
-      {
-        if (aa > cc)
-          kk = 0;
-      }
-      else
-      {
-        if (bb > cc)
-          kk = 1;
+      if (first_page_next_index > second_page_next_index) {
+        if (first_page_next_index > third_page_next)
+          fault_position = 0;
+      } else {
+        if (second_page_next_index > third_page_next)
+          fault_position = 1;
         else
-          kk = 2;
+          fault_position = 2;
       }
-      cout << page[kk].pageno << "  ";
-      page[kk].pageno = pagenum[i];
-    }
-    else
-    {
+      cout << pages[fault_position].page_number << "  ";
+      pages[fault_position].page_number = page_numbers[i];
+    } else {
       cout << "*  ";
     }
   }
   cout << endl;
 }
-///////////////////////////////////
-void lru()
-{
+
+void lru() {
   int i, j, k, temp, flaga;
-  cout << "LRU置页算法：" << endl;
-  for (i = 0; i < 3; i++)
-  {
-    page[i].pageno = pagenum[i];
+  cout << "LRU置页算法:" << endl;
+  for (i = 0; i < 3; i++) {
+    pages[i].page_number = page_numbers[i];
     cout << "x  ";
   }
-  for (i = 3; i < m; i++)
-  {
-    if (page[0].pageno != pagenum[i] && page[1].pageno != pagenum[i] && page[2].pageno != pagenum[i])
-    {
-      cout << page[0].pageno << "  ";
+  for (i = 3; i < page_size; i++) {
+    if (pages[0].page_number != page_numbers[i] &&
+        pages[1].page_number != page_numbers[i] &&
+        pages[2].page_number != page_numbers[i]) {
+      cout << pages[0].page_number << "  ";
       for (j = 0; j < 2; j++)
-        page[j].pageno = page[j + 1].pageno;
-      page[2].pageno = pagenum[i];
-    }
-    else
-    {
+        pages[j].page_number = pages[j + 1].page_number;
+      pages[2].page_number = page_numbers[i];
+    } else {
       for (j = 0; j < 3; j++)
-        if (page[j].pageno == pagenum[i])
+        if (pages[j].page_number == page_numbers[i])
           flaga = j;
 
-      temp = page[flaga].pageno;
+      temp = pages[flaga].page_number;
       for (k = flaga; k < 2; k++)
-        page[k].pageno = page[k + 1].pageno;
+        pages[k].page_number = pages[k + 1].page_number;
 
-      page[2].pageno = temp;
+      pages[2].page_number = temp;
       cout << "*  ";
     }
   }
-  cout << endl
-       << endl;
+  cout << endl << endl;
 }
 
-int main()
-{
+int main() {
   int f;
   init();
-  f = readata();
-  if (f)
-  {
-    pageopt();
+  f = readInput();
+  if (f) {
+    opt();
     cout << endl;
     lru();
     cout << endl;

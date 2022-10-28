@@ -14,12 +14,6 @@
 
 
 本程序包括主要实现位示图算法,比较简单
-
-  VC++调试通过
-
-  (C)copyright by Neo
-
-  欢迎大家测试 请问题请Email:sony006@163.com
 */
 #include <iostream>
 using namespace std;
@@ -29,185 +23,157 @@ const int WORD = 32;   //定义字长
 
 const int WORDNUM = PAGES / WORD; //定义总字数
 
-typedef struct node
-{
-  char jobname[20];
-  int num;
-  int nums[PAGES];
+typedef struct node {
+  char name[20];
+  int page_size;
+  int page_numbers[PAGES];
   struct node *next;
-} jobs;
+} task;
 
 int table[WORDNUM][WORD];
-int freenum = 0;
-jobs *head;
+int free_page_size = 0;
+task *head;
 
 //初始化函数
-void initial()
-{
+void init() {
   int i, j;
-  jobs *p;
+  task *p;
 
   //初始化位示图
-  for (i = 0; i < WORDNUM; i++)
-  {
-    for (j = 0; j < WORD; j++)
-    {
+  for (i = 0; i < WORDNUM; i++) {
+    for (j = 0; j < WORD; j++) {
       table[i][j] = 0;
     }
   }
 
   //初始化作业表头
-  p = new jobs;
-  strcpy(p->jobname, "null");
-  p->num = 0;
+  p = new task;
+  strcpy(p->name, "null");
+  p->page_size = 0;
   p->next = NULL;
   head = p;
 }
 
 //读入位示图初始数据
-void readData()
-{
+void readInput() {
   int i, j;
   FILE *fp;
-  char fname[] = "page_table_bit_field.txt";
+  char fname[] = "page_allocation_bitmap.txt";
 
   cout << "请输入初始位示图数据文件名:" << endl;
 
-  if ((fp = fopen(fname, "r")) != NULL)
-  {
-    for (i = 0; i < WORDNUM; i++)
-    {
-      for (j = 0; j < WORD; j++)
-      {
-        int bin = 0;
+  if ((fp = fopen(fname, "r")) != NULL) {
+    for (i = 0; i < WORDNUM; i++) {
+      for (j = 0; j < WORD; j++) {
         fscanf(fp, "%d", &table[i][j]);
         if (table[i][j] == 0)
-          freenum++;
+          free_page_size++;
       }
     }
     cout << endl;
     cout << "初始位示图" << endl;
-    for (i = 0; i < WORDNUM; i++)
-    {
-      for (j = 0; j < WORD; j++)
-      {
+    for (i = 0; i < WORDNUM; i++) {
+      for (j = 0; j < WORD; j++) {
         cout << table[i][j] << "";
       }
       cout << endl;
     }
-    cout << "总空闲块数:" << freenum;
-  }
-  else
-  {
+    cout << "总空闲块数:" << free_page_size;
+  } else {
     cout << "文件不能打开" << endl;
   }
 }
 
 //新加入作业函数
-void add()
-{
-  char jobname[20];
-  int num;
-  jobs *p;
+void add() {
+  char task_name[20];
+  int page_size;
+  task *p;
   int i, j, k = 0;
 
   cout << "请输入新增的作业名:";
-  cin >> jobname;
+  cin >> task_name;
   cout << "新增作业所需页数:";
-  cin >> num;
+  cin >> page_size;
 
-  if (num <= freenum)
-  {
-    freenum -= num;
+  if (page_size <= free_page_size) {
+    free_page_size -= page_size;
 
-    p = new jobs;
-    strcpy(p->jobname, jobname);
-    p->num = num;
+    p = new task;
+    strcpy(p->name, task_name);
+    p->page_size = page_size;
 
-    for (k = 0; k < num; k++)
-    {
+    for (k = 0; k < page_size; k++) {
       i = 0;
       j = 0;
-      while (table[i][j] == 1)
-      {
+      while (table[i][j] == 1) {
         j = 0;
         while (table[i][j] == 1)
           j++;
         if (table[i][j] == 1)
           i++;
       }
-      p->nums[k] = i * WORD + j;
+      p->page_numbers[k] = i * WORD + j;
       table[i][j] = 1;
     }
 
     p->next = head->next;
     head->next = p;
-  }
-  else
-  {
+  } else {
     cout << "错误,当前剩余页数小于所需页数,请稍候再试:)" << endl;
   }
 }
 
 //完成作业函数
-void finish()
-{
-  char jobname[20];
+void release() {
+  char task_name[20];
 
-  jobs *p, *q;
-  int n, i, j, num, k;
+  task *p, *q;
+  int n, i, j, page_number, k;
 
   cout << "请输入完成的作业名:";
-  cin >> jobname;
+  cin >> task_name;
 
   p = head->next;
   q = head;
 
-  while (p != NULL)
-  {
-    if (strcmp(p->jobname, jobname))
-    {
-      q = q->next;
+  while (p != NULL) {
+    if (strcmp(p->name, task_name) == 0) {
+      break;
     }
     p = p->next;
+    q = q->next;
   }
 
-  p = q->next;
-
-  num = p->num;
-  for (k = 0; k < num; k++)
-  {
-    n = p->nums[k];
+  page_number = p->page_size;
+  for (k = 0; k < page_number; k++) {
+    n = p->page_numbers[k];
     i = n / WORD;
     j = n % WORD;
     table[i][j] = 0;
   }
 
-  freenum += num;
+  free_page_size += page_number;
   q->next = p->next;
   delete p;
 }
 
 //显示当前位示图函数
-void view_table()
-{
+void view_table() {
   int i, j;
   cout << "当前位示图" << endl;
-  for (i = 0; i < WORDNUM; i++)
-  {
-    for (j = 0; j < WORD; j++)
-    {
+  for (i = 0; i < WORDNUM; i++) {
+    for (j = 0; j < WORD; j++) {
       cout << table[i][j] << " ";
     }
     cout << endl;
   }
-  cout << "总空闲块数:" << freenum << endl;
+  cout << "总空闲块数:" << free_page_size << endl;
 }
 
 //显示所有页表函数
-void view_pages()
-{
-  jobs *p;
+void view_pages() {
+  task *p;
   int i;
 
   p = head->next;
@@ -215,44 +181,40 @@ void view_pages()
     cout << "当前没有用户作业" << endl;
   else
     cout << "当前所有的用户作业页表情况" << endl;
-  while (p != NULL)
-  {
-    cout << "作业名:" << p->jobname << "    所用块数:" << p->num << endl;
+  while (p != NULL) {
+    cout << "作业名:" << p->name << "    所用块数:" << p->page_size << endl;
     cout << "本作业所点块的序列是:" << endl;
-    for (i = 0; i < p->num; i++)
-    {
-      cout << p->nums[i] << "  ";
+    for (i = 0; i < p->page_size; i++) {
+      cout << p->page_numbers[i] << "  ";
     }
     cout << endl;
     p = p->next;
   }
 }
 
-int main()
-{
+int main() {
   int t = 1, chioce;
 
-  initial();
+  init();
 
-  readData();
+  readInput();
 
-  while (t == 1)
-  {
-    cout << endl
-         << "===========================================" << endl;
+  while (t == 1) {
+    cout << endl << "===========================================" << endl;
     cout << "            页式内存管理系统模拟程序" << endl;
     cout << "===========================================" << endl;
-    cout << "1.加入新作业    2.完成作业    3.显示当前内存位示图    4.显示所有作业页表  0.退出" << endl;
+    cout << "1.加入新作业    2.完成作业    3.显示当前内存位示图    "
+            "4.显示所有作业页表  0.退出"
+         << endl;
     cout << "请选择:";
     cin >> chioce;
 
-    switch (chioce)
-    {
+    switch (chioce) {
     case 1:
       add();
       break;
     case 2:
-      finish();
+      release();
       break;
     case 3:
       view_table();
