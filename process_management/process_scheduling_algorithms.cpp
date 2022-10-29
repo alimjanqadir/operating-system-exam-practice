@@ -20,7 +20,7 @@ const int TIME_INTERVAL = 10; //定义时间片的长度为10秒
 const int MAX_PCB_SIZE = 100; //定义最大进程数
 
 //定义进程结构体
-typedef struct node {
+typedef struct {
   char name[20];
   int status;
   int time;
@@ -36,7 +36,6 @@ int pcb_size;
 //初始化函数
 void init() {
   int i;
-
   for (i = 0; i < MAX_PCB_SIZE; i++) {
     strcpy(pcbs[i].name, "");
     pcbs[i].status = 0;
@@ -46,12 +45,11 @@ void init() {
     pcbs[i].waiting_time = 0;
     pcbs[i].finished = 0;
   }
-
   pcb_size = 0;
 }
 
 //读数据函数
-int readInput() {
+int read_input() {
   FILE *fp;
   char fname[] = "inputs/processes.txt";
   int i;
@@ -89,24 +87,21 @@ void reset() {
 
 //先进先出算法
 void fifo() {
-  int i, j;
-  int total_waiting_time;
-
   //输出FIFO算法执行流
   cout << endl
        << "---------------------------------------------------------------"
        << endl;
   cout << "FIFO算法执行流:" << endl;
   cout << "进程名    等待时间" << endl;
-  for (i = 0; i < pcb_size; i++) {
+  for (int i = 0; i < pcb_size; i++) {
     cout << "  " << pcbs[i].name << "         " << pcbs[i].waiting_time << endl;
 
-    for (j = i + 1; j < pcb_size; j++) {
+    for (int j = i + 1; j < pcb_size; j++) {
       pcbs[j].waiting_time += pcbs[i].time;
     }
   }
-  total_waiting_time = 0;
-  for (i = 0; i < pcb_size; i++) {
+  int total_waiting_time = 0;
+  for (int i = 0; i < pcb_size; i++) {
     total_waiting_time += pcbs[i].waiting_time;
   }
   cout << "总等待时间:" << total_waiting_time
@@ -115,25 +110,21 @@ void fifo() {
 
 //优先数调度算法
 void hpf() {
-  int i, j, p;
-  int passed_time = 0;
-  int total_waiting_time;
-
   int queue[MAX_PCB_SIZE];
-  int current_priority = 1000;
-
-  for (i = 0; i < pcb_size; i++) {
-    current_priority = 1000;
-    for (j = 0; j < pcb_size; j++) {
+  int highest_priority_task_position = 0;
+  int exec_time = 0;
+  for (int i = 0; i < pcb_size; i++) {
+    int current_priority = 1000;
+    for (int j = 0; j < pcb_size; j++) {
       if ((pcbs[j].finished == 0) && (pcbs[j].priority < current_priority)) {
-        p = j;
+        highest_priority_task_position = j;
         current_priority = pcbs[j].priority;
       }
     }
-    queue[i] = p;
-    pcbs[p].finished = 1;
-    pcbs[p].waiting_time += passed_time;
-    passed_time += pcbs[p].time;
+    queue[i] = highest_priority_task_position;
+    pcbs[highest_priority_task_position].finished = 1;
+    pcbs[highest_priority_task_position].waiting_time += exec_time;
+    exec_time += pcbs[highest_priority_task_position].time;
   }
 
   //输出优先数调度执行流
@@ -142,13 +133,13 @@ void hpf() {
        << endl;
   cout << "优先数调度执行流:" << endl;
   cout << "进程名    等待时间" << endl;
-  for (i = 0; i < pcb_size; i++) {
+  for (int i = 0; i < pcb_size; i++) {
     cout << "  " << pcbs[queue[i]].name << "        "
          << pcbs[queue[i]].waiting_time << endl;
   }
 
-  total_waiting_time = 0;
-  for (i = 0; i < pcb_size; i++) {
+  int total_waiting_time = 0;
+  for (int i = 0; i < pcb_size; i++) {
     total_waiting_time += pcbs[i].waiting_time;
   }
   cout << "总等待时间:" << total_waiting_time
@@ -157,77 +148,63 @@ void hpf() {
 
 //时间片轮转调度算法
 void round_robin() {
-  int i, j, number, flag = 1;
-  int passed_time = 0;
-  int max_time = 0;
-  int round = 0;
-
   int queue[1000];
-  int total = 0;
-
+  int queue_element_count = 0;
+  int round = 0;
+  int flag = 1;
   while (flag == 1) {
     flag = 0;
-    number = 0;
-
+    int unfinished_process_count = 0;
+    int last_unfinished_process = 0;
     // Find unfinished process count and last unfinished process pointer
-    for (i = 0; i < pcb_size; i++) {
+    for (int i = 0; i < pcb_size; i++) {
       if (pcbs[i].finished == 0) {
-        number++;
-        j = i;
+        unfinished_process_count++;
+        last_unfinished_process = i;
       }
     }
 
     // Only one unfinished process left
-    if (number == 1) {
-      queue[total] = j;
-      total++;
-      pcbs[j].finished = 1;
-    }
-
-    if (number > 1) {
-      for (i = 0; i < pcb_size; i++) {
+    if (unfinished_process_count == 1) {
+      queue[queue_element_count] = last_unfinished_process;
+      pcbs[last_unfinished_process].finished = 1;
+      queue_element_count++;
+    } else {
+      for (int i = 0; i < pcb_size; i++) {
         if (pcbs[i].finished == 0) {
           flag = 1;
-          queue[total] = i;
-          total++;
+          queue[queue_element_count] = i;
+          queue_element_count++;
           if (pcbs[i].time <= TIME_INTERVAL * (round + 1)) {
             pcbs[i].finished = 1;
           }
         }
       }
     }
-
     round++;
   }
 
-  if (queue[total - 1] == queue[total - 2]) {
-    total--;
+  if (queue[queue_element_count - 1] == queue[queue_element_count - 2]) {
+    queue_element_count--;
   }
 
   cout << endl
        << "---------------------------------------------------------------"
        << endl;
   cout << "时间片轮转调度执行流:";
-  for (i = 0; i < total; i++) {
+  for (int i = 0; i < queue_element_count; i++) {
     cout << pcbs[queue[i]].name << "  ";
   }
 }
 
 //主函数
 int main() {
-  int flag;
-
   init();
-
-  flag = readInput();
-
-  if (flag == 1) {
+  if (read_input()) {
     fifo();
     reset();
-
     hpf();
     reset();
-
     round_robin();
   }
   return 0;
