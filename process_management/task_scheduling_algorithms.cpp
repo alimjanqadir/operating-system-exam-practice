@@ -31,7 +31,7 @@ using namespace std;
 const int MAX_TASK_SIZE = 50; //定义最大作业
 
 //定义数据结构体
-typedef struct node {
+typedef struct {
   int number;
   int arrival_time;
   int arrival_hour;
@@ -75,9 +75,7 @@ void init() {
 
 //重置作业数据函数
 void reset() {
-  int i;
-
-  for (i = 0; i < MAX_TASK_SIZE; i++) {
+  for (int i = 0; i < MAX_TASK_SIZE; i++) {
     tasks[i].start_time = 0;
     tasks[i].turnaround_time = 0;
 
@@ -86,13 +84,9 @@ void reset() {
 }
 
 //读入作业数据函数
-void readData() {
+void read_input() {
   FILE *fp;
   char fname[] = "inputs/tasks.txt";
-  int i;
-
-  cout << "请输入作业数据文件名:";
-
   if ((fp = fopen(fname, "r")) == NULL) {
     cout << "错误,文件打不开,请检查文件名:)" << endl;
   } else {
@@ -106,13 +100,12 @@ void readData() {
     }
     //输出初始作业数据
     cout << "输出初始作业数据" << endl;
-    cout << "---------------------------------------------------------------"
-         << endl;
+    cout << "-----------------------" << endl;
     cout.setf(2);
     cout << setw(10) << "作业号" << setw(12) << "到达时间" << setw(14)
          << "所需时间(分)" << setw(14) << "优先级(0>1)" << endl;
 
-    for (i = 0; i < task_size; i++) {
+    for (int i = 0; i < task_size; i++) {
       cout << setw(10) << tasks[i].number << setw(12) << tasks[i].arrival_time
            << setw(14) << tasks[i].execution_time << setw(14)
            << tasks[i].priority << endl;
@@ -122,11 +115,6 @@ void readData() {
 
 // FIFO算法
 void fifo() {
-  int i;
-  int current_hour;
-  int current_minute;
-
-  int total_time = 0;
 
   //输出作业流
   cout << endl;
@@ -137,9 +125,10 @@ void fifo() {
   cout << setw(10) << "作业号" << setw(12) << "到达时间" << setw(12)
        << "开始时间" << setw(14) << "周转时间(分)" << endl;
 
-  current_hour = tasks[0].arrival_hour;
-  current_minute = tasks[0].arrival_minute;
-  for (i = 0; i < task_size; i++) {
+  int current_hour = tasks[0].arrival_hour;
+  int current_minute = tasks[0].arrival_minute;
+  int turnaround_time = 0;
+  for (int i = 0; i < task_size; i++) {
     tasks[i].start_time = current_hour * 100 + current_minute;
     tasks[i].turnaround_time = (current_hour - tasks[i].arrival_hour) * 60 +
                                (current_minute - tasks[i].arrival_minute) +
@@ -153,23 +142,16 @@ void fifo() {
         current_hour + (tasks[i].execution_time + current_minute) / 60;
     current_minute = (tasks[i].execution_time + current_minute) % 60;
 
-    total_time += tasks[i].turnaround_time;
+    turnaround_time += tasks[i].turnaround_time;
   }
 
   cout << endl
-       << "总周转时间:" << total_time
-       << "   平均周转时间:" << total_time / task_size << endl;
+       << "总周转时间:" << turnaround_time
+       << "   平均周转时间:" << turnaround_time / task_size << endl;
 }
 
 //运算时间短的作业优先算法
 void srtn() {
-  int i, j, p;
-  int current_hour;
-  int current_minute;
-  int current_need_time;
-
-  int total_time = 0;
-
   //输出作业流
   cout << endl;
   cout << endl
@@ -183,49 +165,64 @@ void srtn() {
        << "所需时间(分)" << setw(12) << "开始时间" << setw(14) << "周转时间(分)"
        << endl;
 
-  current_hour = tasks[task_size - 1].arrival_hour;
-  current_minute = tasks[task_size - 1].arrival_minute;
-  for (i = 0; i < task_size; i++) {
-    current_need_time = 30000;
-    for (j = 0; j < task_size; j++) {
+  int current_task_hour = tasks[task_size - 1].arrival_hour;
+  int current_task_minute = tasks[task_size - 1].arrival_minute;
+  int current_smallest_execution_time_task_position;
+  int turnaround_time = 0;
+  for (int i = 0; i < task_size; i++) {
+    int current_task_execution_time = INT_MAX;
+    for (int j = 0; j < task_size; j++) {
       if ((tasks[j].finished == 0) &&
-          (tasks[j].execution_time < current_need_time)) {
-        p = j;
-        current_need_time = tasks[j].execution_time;
+          (tasks[j].execution_time < current_task_execution_time)) {
+        current_smallest_execution_time_task_position = j;
+        current_task_execution_time = tasks[j].execution_time;
       }
     }
 
-    tasks[p].start_time = current_hour * 100 + current_minute;
-    tasks[p].turnaround_time = (current_hour - tasks[p].arrival_hour) * 60 +
-                               (current_minute - tasks[p].arrival_minute) +
-                               tasks[p].execution_time;
+    tasks[current_smallest_execution_time_task_position].start_time =
+        current_task_hour * 100 + current_task_minute;
+    tasks[current_smallest_execution_time_task_position].turnaround_time =
+        (current_task_hour -
+         tasks[current_smallest_execution_time_task_position].arrival_hour) *
+            60 +
+        (current_task_minute -
+         tasks[current_smallest_execution_time_task_position].arrival_minute) +
+        tasks[current_smallest_execution_time_task_position].execution_time;
 
-    cout << setw(10) << tasks[p].number << setw(12) << tasks[p].arrival_time
-         << setw(14) << tasks[p].execution_time << setw(12)
-         << tasks[p].start_time << setw(14) << tasks[p].turnaround_time << endl;
+    cout << setw(10)
+         << tasks[current_smallest_execution_time_task_position].number
+         << setw(12)
+         << tasks[current_smallest_execution_time_task_position].arrival_time
+         << setw(14)
+         << tasks[current_smallest_execution_time_task_position].execution_time
+         << setw(12)
+         << tasks[current_smallest_execution_time_task_position].start_time
+         << setw(14)
+         << tasks[current_smallest_execution_time_task_position].turnaround_time
+         << endl;
 
-    current_hour =
-        current_hour + (tasks[p].execution_time + current_minute) / 60;
-    current_minute = (tasks[p].execution_time + current_minute) % 60;
+    current_task_hour =
+        current_task_hour +
+        (tasks[current_smallest_execution_time_task_position].execution_time +
+         current_task_minute) /
+            60;
+    current_task_minute =
+        (tasks[current_smallest_execution_time_task_position].execution_time +
+         current_task_minute) %
+        60;
 
-    tasks[p].finished = 1;
+    tasks[current_smallest_execution_time_task_position].finished = 1;
 
-    total_time += tasks[p].turnaround_time;
+    turnaround_time +=
+        tasks[current_smallest_execution_time_task_position].turnaround_time;
   }
   cout << endl
-       << "总周转时间:" << total_time
-       << "   平均周转时间:" << total_time / task_size << endl;
+       << "总周转时间:" << turnaround_time
+       << "   平均周转时间:" << turnaround_time / task_size << endl;
 }
 
 //优先数调度算法
 void hpf() {
-  int i, j, p;
-  int current_hour;
-  int current_minute;
-  int current_privilege;
-
-  int total_time = 0;
-
   //输出作业流
   cout << endl;
   cout << endl
@@ -239,46 +236,60 @@ void hpf() {
        << "优先级(0>1)" << setw(12) << "开始时间" << setw(14) << "周转时间(分)"
        << endl;
 
-  current_hour = tasks[task_size - 1].arrival_hour;
-  current_minute = tasks[task_size - 1].arrival_minute;
-  for (i = 0; i < task_size; i++) {
-    current_privilege = 30000;
-    for (j = 0; j < task_size; j++) {
-      if ((tasks[j].finished == 0) && (tasks[j].priority < current_privilege)) {
-        p = j;
-        current_privilege = tasks[j].priority;
+  int current_task_hour = tasks[task_size - 1].arrival_hour;
+  int current_task_minute = tasks[task_size - 1].arrival_minute;
+  int current_highest_priority_task_position = INT_MAX;
+  int turnaround_time = 0;
+  for (int i = 0; i < task_size; i++) {
+    int current_task_priority = INT_MAX;
+    for (int j = 0; j < task_size; j++) {
+      if ((tasks[j].finished == 0) &&
+          (tasks[j].priority < current_task_priority)) {
+        current_highest_priority_task_position = j;
+        current_task_priority = tasks[j].priority;
       }
     }
-    tasks[p].start_time = current_hour * 100 + current_minute;
-    tasks[p].turnaround_time = (current_hour - tasks[p].arrival_hour) * 60 +
-                               (current_minute - tasks[p].arrival_minute) +
-                               tasks[p].execution_time;
+    tasks[current_highest_priority_task_position].start_time =
+        current_task_hour * 100 + current_task_minute;
+    tasks[current_highest_priority_task_position].turnaround_time =
+        (current_task_hour -
+         tasks[current_highest_priority_task_position].arrival_hour) *
+            60 +
+        (current_task_minute -
+         tasks[current_highest_priority_task_position].arrival_minute) +
+        tasks[current_highest_priority_task_position].execution_time;
 
-    cout << setw(10) << tasks[p].number << setw(12) << tasks[p].arrival_time
-         << setw(14) << tasks[p].priority << setw(12) << tasks[p].start_time
-         << setw(14) << tasks[p].turnaround_time << endl;
+    cout << setw(10) << tasks[current_highest_priority_task_position].number
+         << setw(12)
+         << tasks[current_highest_priority_task_position].arrival_time
+         << setw(14) << tasks[current_highest_priority_task_position].priority
+         << setw(12) << tasks[current_highest_priority_task_position].start_time
+         << setw(14)
+         << tasks[current_highest_priority_task_position].turnaround_time
+         << endl;
 
-    current_hour =
-        current_hour + (tasks[p].execution_time + current_minute) / 60;
-    current_minute = (tasks[p].execution_time + current_minute) % 60;
+    current_task_hour =
+        current_task_hour +
+        (tasks[current_highest_priority_task_position].execution_time +
+         current_task_minute) /
+            60;
+    current_task_minute =
+        (tasks[current_highest_priority_task_position].execution_time +
+         current_task_minute) %
+        60;
 
-    tasks[p].finished = 1;
+    tasks[current_highest_priority_task_position].finished = 1;
 
-    total_time += tasks[p].turnaround_time;
+    turnaround_time +=
+        tasks[current_highest_priority_task_position].turnaround_time;
   }
   cout << endl
-       << "总周转时间:" << total_time
-       << "   平均周转时间:" << total_time / task_size << endl;
+       << "总周转时间:" << turnaround_time
+       << "   平均周转时间:" << turnaround_time / task_size << endl;
 }
 
 //响应比最高者优先调度算法
 void hrrf() {
-  int i, j, p;
-  int current_hour;
-  int current_minute;
-  float current_response_rate;
-
-  int total_turnaround_time = 0;
 
   //输出作业流
   cout << endl;
@@ -287,71 +298,85 @@ void hrrf() {
           "开始调度时刻为最后一个作业到达系统的时间)"
        << endl;
   cout << "--------------------------------------------------------------------"
-          "----"
        << endl;
   cout.setf(2);
   cout << setw(10) << "作业号" << setw(12) << "到达时间" << setw(12)
        << "开始时间" << setw(14) << "周转时间(分)" << endl;
 
-  current_hour = tasks[task_size - 1].arrival_hour;
-  current_minute = tasks[task_size - 1].arrival_minute;
-  for (i = 0; i < task_size; i++) {
-    current_response_rate = -1;
+  int current_task_hour = tasks[task_size - 1].arrival_hour;
+  int current_task_minute = tasks[task_size - 1].arrival_minute;
+  int current_highest_response_rate_task_position = -1;
+  int turnaround_time = 0;
+  for (int i = 0; i < task_size; i++) {
+    float current_response_rate = -1;
     // Calculate and set the respose rate
-    for (j = 0; j < task_size; j++) {
+    for (int j = 0; j < task_size; j++) {
       if (tasks[j].finished == 0) {
-        tasks[j].turnaround_time = (current_hour - tasks[j].arrival_hour) * 60 +
-                                   (current_minute - tasks[j].arrival_minute);
+        tasks[j].turnaround_time =
+            (current_task_hour - tasks[j].arrival_hour) * 60 +
+            (current_task_minute - tasks[j].arrival_minute);
         tasks[j].reponse_rate =
             (float)(tasks[j].turnaround_time / tasks[j].execution_time);
       }
     }
 
     // Choose the task with the higest respones rate
-    for (j = 0; j < task_size; j++) {
+    for (int j = 0; j < task_size; j++) {
       if ((tasks[j].finished == 0) &&
           (tasks[j].reponse_rate > current_response_rate)) {
-        p = j;
+        current_highest_response_rate_task_position = j;
         current_response_rate = tasks[j].reponse_rate;
       }
     }
     // Set the start time of the choosen task and recalculate response rate
-    tasks[p].start_time = current_hour * 100 + current_minute;
-    tasks[p].turnaround_time = (current_hour - tasks[p].arrival_hour) * 60 +
-                               (current_minute - tasks[p].arrival_minute) +
-                               tasks[p].execution_time;
+    tasks[current_highest_response_rate_task_position].start_time =
+        current_task_hour * 100 + current_task_minute;
+    tasks[current_highest_response_rate_task_position].turnaround_time =
+        (current_task_hour -
+         tasks[current_highest_response_rate_task_position].arrival_hour) *
+            60 +
+        (current_task_minute -
+         tasks[current_highest_response_rate_task_position].arrival_minute) +
+        tasks[current_highest_response_rate_task_position].execution_time;
 
-    cout << setw(10) << tasks[p].number << setw(12) << tasks[p].arrival_time
-         << setw(12) << tasks[p].start_time << setw(14)
-         << tasks[p].turnaround_time << endl;
+    cout << setw(10)
+         << tasks[current_highest_response_rate_task_position].number
+         << setw(12)
+         << tasks[current_highest_response_rate_task_position].arrival_time
+         << setw(12)
+         << tasks[current_highest_response_rate_task_position].start_time
+         << setw(14)
+         << tasks[current_highest_response_rate_task_position].turnaround_time
+         << endl;
 
-    current_hour =
-        current_hour + (tasks[p].execution_time + current_minute) / 60;
-    current_minute = (tasks[p].execution_time + current_minute) % 60;
+    current_task_hour =
+        current_task_hour +
+        (tasks[current_highest_response_rate_task_position].execution_time +
+         current_task_minute) /
+            60;
+    current_task_minute =
+        (tasks[current_highest_response_rate_task_position].execution_time +
+         current_task_minute) %
+        60;
 
-    tasks[p].finished = 1;
+    tasks[current_highest_response_rate_task_position].finished = 1;
 
-    total_turnaround_time += tasks[p].turnaround_time;
+    turnaround_time +=
+        tasks[current_highest_response_rate_task_position].turnaround_time;
   }
   cout << endl
-       << "总周转时间:" << total_turnaround_time
-       << "   平均周转时间:" << total_turnaround_time / task_size << endl;
+       << "总周转时间:" << turnaround_time
+       << "   平均周转时间:" << turnaround_time / task_size << endl;
 }
 
 int main() {
   init();
-
-  readData();
-
+  read_input();
   fifo();
-
   srtn();
   reset();
-
   hpf();
   reset();
-
   hrrf();
-
   return 0;
 }
